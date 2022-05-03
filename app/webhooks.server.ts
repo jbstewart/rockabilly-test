@@ -23,8 +23,9 @@ export function registerWebhookService(serviceDefinition: ServiceDefinition) {
 
 export function extractServiceFromUrl(url: string): string {
 	const re = new RegExp('[^/]+(?=/$|$)')
+	const knownServiceCodes = knownServices.map(it => it.code)
 	const matches = url.toLowerCase().match(re)
-	if (matches && matches.length > 0 && knownServices.map(it => it.code).includes(matches[0] as string)) {
+	if (matches && matches.length > 0 && knownServiceCodes.includes(matches[0] as string)) {
 		return matches[0] as string;
 	}
 	return 'UNKNOWN'
@@ -48,18 +49,15 @@ export async function validateWebhookEvent(request: Request): Promise<ServiceEve
 }
 
 export async function processWebhookEvents(): Promise<void> {
-	let passCount = 0
 	let unprocessedEvents: WebhookEvent[] = await getUnprocessedWebhookEvents()
 	while (unprocessedEvents.length > 0) {
-		passCount++
-		console.log(`processWebhookEvents: pass ${passCount}, processing ${unprocessedEvents.length} events`)
 		for (let i = 0; i < unprocessedEvents.length; i++) {
 			const it = unprocessedEvents[i]
 			await setWebhookEventState({ service: it.service, externalId: it.externalId, state: WebhookEventState.PROCESSING })
-			console.log(`processWebhookEvents: processing event ${it.externalId} for the ${it.service} service`)
 
 			try {
-				const success = await knownServices.find(svc => svc.code === it.service)?.processEvent(it.event)
+				const service = knownServices.find(svc => svc.code === it.service)
+				const success = await service?.processEvent(it.event) || false
 				await setWebhookEventState({
 					service: it.service,
 					externalId: it.externalId,

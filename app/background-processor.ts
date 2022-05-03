@@ -1,8 +1,10 @@
 import { processWebhookEvents } from '~/webhooks.server'
+import { registerWebhooks } from '~/webhooks/register-webhooks.server'
 
 async function main(): Promise<void> {
+	console.log(`Starting background processing...`)
+	registerWebhooks()
 	setInterval(async () => {
-		console.log('Background processing')
 		await processWebhookEvents()
 	}, 10000)
 }

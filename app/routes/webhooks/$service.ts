@@ -1,4 +1,4 @@
-import type { ActionFunction} from '@remix-run/node';
+import type { ActionFunction } from '@remix-run/node';
 import { json } from '@remix-run/node'
 import { validateEndpoint, validateWebhookEvent } from '~/webhooks.server'
 import { badRequest, notFound } from 'remix-utils'
@@ -8,7 +8,7 @@ export const action: ActionFunction = async ({ request }) => {
 	if (!validateEndpoint(request)) {
 		return notFound('NOT FOUND')
 	}
-	const { service, signatureMatches, shouldProcessEvent, externalId, payload } = await validateWebhookEvent(request)
+	const { service, signatureMatches, shouldProcessEvent, externalId, payload } = await validateWebhookEvent(await request)
 	if (!signatureMatches) {
 		return badRequest({})
 	}
@@ -19,6 +19,5 @@ export const action: ActionFunction = async ({ request }) => {
 		return json({ success: true, message: 'Previously processed' })
 	}
 	await addWebhookEventToQueue(service, externalId!, payload!)
-	await requestBackgroundProcessing()
 	return json({ success: true }, 200)
 }
